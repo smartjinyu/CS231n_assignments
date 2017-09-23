@@ -73,6 +73,7 @@ class KNearestNeighbor(object):
         # training point, and store the result in dists[i, j]. You should   #
         # not use a loop over dimension.                                    #
         #####################################################################
+        dists[i,j]=np.sum(np.power(self.X_train[j]-X[i],2),0)
         pass
         #####################################################################
         #                       END OF YOUR CODE                            #
@@ -95,6 +96,8 @@ class KNearestNeighbor(object):
       # Compute the l2 distance between the ith test point and all training #
       # points, and store the result in dists[i, :].                        #
       #######################################################################
+      temp = self.X_train-X[i]
+      dists[i]=np.sum(np.power(temp,2),1)
       pass
       #######################################################################
       #                         END OF YOUR CODE                            #
@@ -123,6 +126,9 @@ class KNearestNeighbor(object):
     # HINT: Try to formulate the l2 distance using matrix multiplication    #
     #       and two broadcast sums.                                         #
     #########################################################################
+    sum_power_train = np.sum(np.power(self.X_train,2),1).reshape(1,num_train) # 1*5000
+    sum_power_test = np.sum(np.power(X,2),1).reshape(num_test,1) # 500*1
+    dists = sum_power_test + sum_power_train - (np.dot(X,self.X_train.transpose())) * 2
     pass
     #########################################################################
     #                         END OF YOUR CODE                              #
@@ -155,6 +161,8 @@ class KNearestNeighbor(object):
       # neighbors. Store these labels in closest_y.                           #
       # Hint: Look up the function numpy.argsort.                             #
       #########################################################################
+      closest_y = self.y_train[np.argpartition(dists[i],k)[:k]]
+      #https://stackoverflow.com/questions/6910641/how-to-get-indices-of-n-maximum-values-in-a-numpy-array
       pass
       #########################################################################
       # TODO:                                                                 #
@@ -163,6 +171,7 @@ class KNearestNeighbor(object):
       # Store this label in y_pred[i]. Break ties by choosing the smaller     #
       # label.                                                                #
       #########################################################################
+      y_pred[i] = np.argmax(np.bincount(closest_y))#np.round(np.sum(closest_y)/k)
       pass
       #########################################################################
       #                           END OF YOUR CODE                            # 
