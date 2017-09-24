@@ -35,11 +35,13 @@ def svm_loss_naive(W, X, y, reg):
       margin = scores[j] - correct_class_score + 1 # note delta = 1
       if margin > 0:
         loss += margin
+        dW[:,j] += X[i].transpose()
+        dW[:,y[i]] -= X[i].transpose()
 
   # Right now the loss is a sum over all training examples, but we want it
   # to be an average instead so we divide by num_train.
   loss /= num_train
-
+  dW /= num_train
   # Add regularization to the loss.
   loss += reg * np.sum(W * W)
 
@@ -70,7 +72,14 @@ def svm_loss_vectorized(W, X, y, reg):
   # Implement a vectorized version of the structured SVM loss, storing the    #
   # result in loss.                                                           #
   #############################################################################
-  pass
+  num_train = X.shape[0]
+  scores = X.dot(W).transpose()
+  correct_scores = np.choose(y,scores)
+  margins = np.maximum(scores - correct_scores + 1,0)
+  margins = margins.transpose()
+  margins[np.arange(num_train),y] = 0
+  loss += (np.sum(np.sum(margins)))/num_train
+  loss += reg * np.sum(W * W)
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -85,6 +94,13 @@ def svm_loss_vectorized(W, X, y, reg):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
+  # in reference to https://mlxai.github.io/2017/01/06/vectorized-implementation-of-svm-loss-and-gradient-update.html
+  binary = np.zeros(margins.shape)
+  binary[margins>0] = 1
+  row_sum = np.sum(binary,1)
+  binary[np.arange(num_train),y] = -row_sum.transpose()
+  dW = X.transpose().dot(binary)/num_train
+  
   pass
   #############################################################################
   #                             END OF YOUR CODE                              #
