@@ -37,13 +37,14 @@ def softmax_loss_naive(W, X, y, reg):
       C = -np.amax(scores[i,:])
       Li = -np.log(np.exp(scores[i,y[i]]+C)/np.sum(np.exp(scores[i,:]+C)))
       loss += Li
-      dW[:,y[i]] -= X[i].transpose()
-      denominator = np.sum(np.exp(scores[i,:]))
-      dW += np.outer(X[i,:],np.exp(scores[i,:]))/denominator
+      np.add.at(dW,[:,y],-X.transpose)
+      denominator = np.sum(np.exp(scores[i,:]+C))
+      #dW += np.outer(X[i,:],np.exp(scores[i,:]+C))/denominator
   pass
   loss /= num_train
   loss += reg * np.sum(W*W)
   dW /= num_train
+  print(dW)
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
@@ -67,6 +68,16 @@ def softmax_loss_vectorized(W, X, y, reg):
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
+  num_train = X.shape[0]
+  scores = X.dot(W)
+  expscores = np.exp(scores)
+  loss = -np.sum(scores[np.arange(num_train),y]) + np.sum(np.log(np.sum(expscores,1)))
+  #dW = X.transpose().dot(expscores)/np.sum(expscores,0)
+  dW[:,y] -= X.transpose()
+  loss /= num_train
+  loss += reg * np.sum(W*W)
+  dW /= num_train
+  print(dW)
   pass
   #############################################################################
   #                          END OF YOUR CODE                                 #
