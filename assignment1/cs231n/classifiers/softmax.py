@@ -81,7 +81,7 @@ def softmax_loss_vectorized(W, X, y, reg):
   loss /= num_train
   loss += 0.5 * reg * np.sum(W*W)
   dW /= num_train
-  dW += reg * dW
+  dW += reg * W
   pass
   #############################################################################
   #                          END OF YOUR CODE                                 #
