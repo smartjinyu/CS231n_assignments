@@ -76,6 +76,10 @@ class TwoLayerNet(object):
     # Store the result in the scores variable, which should be an array of      #
     # shape (N, C).                                                             #
     #############################################################################
+    A1 = X.dot(W1)+b1 # N*H
+    A2 = np.maximum(A1,0) # N*H
+    A3 = A2.dot(W2)+b2 # N*C
+    scores = A3
     pass
     #############################################################################
     #                              END OF YOUR CODE                             #
@@ -93,6 +97,9 @@ class TwoLayerNet(object):
     # in the variable loss, which should be a scalar. Use the Softmax           #
     # classifier loss.                                                          #
     #############################################################################
+    loss = -np.sum(scores[np.arange(N),y]) + np.sum(np.log(np.sum(np.exp(scores),1)))
+    loss /= N 
+    loss += 0.5*reg*(np.sum(W1*W1)+np.sum(W2*W2))
     pass
     #############################################################################
     #                              END OF YOUR CODE                             #
@@ -105,6 +112,18 @@ class TwoLayerNet(object):
     # and biases. Store the results in the grads dictionary. For example,       #
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
+    expA3 = np.exp(A3-np.max(A3))
+    dA3_temp = (expA3.T/np.sum(expA3,1)).T
+    dA3_temp[np.arange(N),y] -= 1
+   
+    dA3 = dA3_temp/N # softmax layer gradient, which is N*C
+    grads['b2'] = np.sum(dA3,0) # caution that there is broadcast here
+    # grads['W2'] = np.dot(A2.T,dA3) + reg * W2
+    grads['W2'] = A2.T.dot(dA3) + reg * W2
+    dA2 = dA3.dot(W2.T) # gradient before ReLU layer, which is N*H
+    dA1 = (A2 > 0)*dA2 # gradient before first FC layer, which is N*H
+    grads['b1'] = np.sum(dA1,0)
+    grads['W1'] = np.dot(X.T,dA1) + reg * W1
     pass
     #############################################################################
     #                              END OF YOUR CODE                             #

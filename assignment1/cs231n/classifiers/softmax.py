@@ -42,8 +42,9 @@ def softmax_loss_naive(W, X, y, reg):
       dW += np.outer(X[i,:],np.exp(scores[i,:]+C))/denominator
   pass
   loss /= num_train
-  loss += reg * np.sum(W*W)
+  loss += 0.5 * reg * np.sum(W*W)
   dW /= num_train
+  dW += reg * W
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
@@ -78,8 +79,9 @@ def softmax_loss_vectorized(W, X, y, reg):
   dW = X.transpose().dot(denominator)
 
   loss /= num_train
-  loss += reg * np.sum(W*W)
+  loss += 0.5 * reg * np.sum(W*W)
   dW /= num_train
+  dW += reg * dW
   pass
   #############################################################################
   #                          END OF YOUR CODE                                 #
