@@ -255,7 +255,6 @@ def batchnorm_backward(dout, cache):
     dxmu1 = 2 * numerator *dsqrt / N
     
     dx1 = dxmu0 + dxmu1
-    print(dx1.shape)
     dmu = -np.sum(dx1,0)/N
     dx = dx1 + dmu
     pass
@@ -297,8 +296,8 @@ def batchnorm_backward_alt(dout, cache):
     # take derivatives at x - x_mean on the standard nomralization step
     # i.e. (x - x_mean) / np.sqrt(x_var + eps)
     # or you may just simplify the expression above, eliminate intermediate variables
+    # This should be the compiler's work if in C++/Java
     dxmu = dx_temp /  denominator - np.sum(dx_temp*numerator,0) * numerator / (N * denominator ** 3)
-    print(dx_temp.shape)
     dmu = -np.sum(dxmu,0)/N
     dx = dxmu + dmu
 
