@@ -176,6 +176,16 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # variance, storing your result in the running_mean and running_var   #
         # variables.                                                          #
         #######################################################################
+        mini_mean = np.mean(x,axis=0,dtype=x.dtype)
+        mini_var =np.var(x,axis=0,dtype=x.dtype)
+        numerator = x - mini_mean
+        denominator = (np.sqrt(mini_var + eps))
+        x_temp = numerator / denominator
+        out =  x_temp * gamma + beta
+        running_mean = momentum * running_mean + (1 - momentum) * mini_mean
+        running_var = momentum * running_var + (1 - momentum) * mini_var
+        # running_mean and running_var are used at test time, not at training time
+        cache = (x_temp, mini_mean, mini_var, numerator, denominator, gamma)
         pass
         #######################################################################
         #                           END OF YOUR CODE                          #
@@ -187,6 +197,11 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # then scale and shift the normalized data using gamma and beta.      #
         # Store the result in the out variable.                               #
         #######################################################################
+        numerator = (x - running_mean)
+        denominator = (np.sqrt(running_var + eps))
+        x_temp = numerator / denominator 
+        out = gamma * x_temp + beta
+        cache = (x_temp, running_mean, running_var, numerator, denominator, gamma)
         pass
         #######################################################################
         #                          END OF YOUR CODE                           #
@@ -223,11 +238,29 @@ def batchnorm_backward(dout, cache):
     # TODO: Implement the backward pass for batch normalization. Store the    #
     # results in the dx, dgamma, and dbeta variables.                         #
     ###########################################################################
+    N, D = dout.shape
+    x_temp, mean, var, numerator, denominator, gamma = cache 
+    # numerator = x - x_mean, denominator = np.sqrt(x_var + eps), x_temp = numerator / denominator
+    dbeta = np.sum(dout,axis=0)
+    dgamma = np.sum(x_temp*dout,axis=0)
+    # caution that x_mean x_var are functions of x, we need to take derivatives of them
+    dx_temp = dout * gamma
+    dnumerator = dx_temp / denominator
+    ddenominator = - np.sum(dx_temp * numerator,0) / (denominator ** 2)
+    
+    # here we let xmu = x - x_mean as a new varible
+    # reference https://kratzert.github.io/2016/02/12/understanding-the-gradient-flow-through-the-batch-normalization-layer.html
+    dxmu0 = dnumerator
+    dsqrt = ddenominator / (2*denominator)
+    dxmu1 = 2 * numerator *dsqrt / N
+    
+    dx1 = dxmu0 + dxmu1
+    dmu = -np.sum(dxmu0 + dxmu1,0)/N
+    dx = dx1 + dmu
     pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
-
     return dx, dgamma, dbeta
 
 
