@@ -185,7 +185,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         running_mean = momentum * running_mean + (1 - momentum) * mini_mean
         running_var = momentum * running_var + (1 - momentum) * mini_var
         # running_mean and running_var are used at test time, not at training time
-        cache = (x_temp, mini_mean, mini_var, numerator, denominator, gamma)
+        cache = (x_temp, numerator, denominator, gamma)
         pass
         #######################################################################
         #                           END OF YOUR CODE                          #
@@ -201,7 +201,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         denominator = (np.sqrt(running_var + eps))
         x_temp = numerator / denominator 
         out = gamma * x_temp + beta
-        cache = (x_temp, running_mean, running_var, numerator, denominator, gamma)
+        cache = (x_temp, numerator, denominator, gamma)
         pass
         #######################################################################
         #                          END OF YOUR CODE                           #
@@ -239,7 +239,7 @@ def batchnorm_backward(dout, cache):
     # results in the dx, dgamma, and dbeta variables.                         #
     ###########################################################################
     N, D = dout.shape
-    x_temp, mean, var, numerator, denominator, gamma = cache 
+    x_temp, numerator, denominator, gamma = cache 
     # numerator = x - x_mean, denominator = np.sqrt(x_var + eps), x_temp = numerator / denominator
     dbeta = np.sum(dout,axis=0)
     dgamma = np.sum(x_temp*dout,axis=0)
@@ -255,7 +255,8 @@ def batchnorm_backward(dout, cache):
     dxmu1 = 2 * numerator *dsqrt / N
     
     dx1 = dxmu0 + dxmu1
-    dmu = -np.sum(dxmu0 + dxmu1,0)/N
+    print(dx1.shape)
+    dmu = -np.sum(dx1,0)/N
     dx = dx1 + dmu
     pass
     ###########################################################################
@@ -286,6 +287,21 @@ def batchnorm_backward_alt(dout, cache):
     # should be able to compute gradients with respect to the inputs in a     #
     # single statement; our implementation fits on a single 80-character line.#
     ###########################################################################
+    N, D = dout.shape
+    x_temp, numerator, denominator, gamma = cache 
+    # numerator = x - x_mean, denominator = np.sqrt(x_var + eps), x_temp = numerator / denominator
+    dbeta = np.sum(dout,axis=0)
+    dgamma = np.sum(x_temp*dout,axis=0)
+    # caution that x_mean x_var are functions of x, we need to take derivatives of them
+    dx_temp = dout * gamma
+    # take derivatives at x - x_mean on the standard nomralization step
+    # i.e. (x - x_mean) / np.sqrt(x_var + eps)
+    # or you may just simplify the expression above, eliminate intermediate variables
+    dxmu = dx_temp /  denominator - np.sum(dx_temp*numerator,0) * numerator / (N * denominator ** 3)
+    print(dx_temp.shape)
+    dmu = -np.sum(dxmu,0)/N
+    dx = dxmu + dmu
+
     pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
