@@ -224,7 +224,8 @@ class FullyConnectedNet(object):
                 self.params['beta%d'%(index+1)] = np.zeros(hidden_dims[index],dtype=self.dtype)
         pass
         # the last affine layer before softmax
-        index += 1
+        # index += 1
+        index = len(hidden_dims)
         self.params['W%d'%(index+1)] = weight_scale * np.random.randn(hidden_dims[-1],num_classes)
         self.params['b%d'%(index+1)] = np.zeros(num_classes)
         ############################################################################
@@ -293,6 +294,10 @@ class FullyConnectedNet(object):
         else:
             out0,cache0 = affine_relu_forward(X,self.params['W1'],self.params['b1'])
             
+        if self.use_dropout == True:
+            out0,cache_dropout = dropout_forward(out0,self.dropout_param)
+            cache0 = (cache0, cache_dropout)
+
         out_arr.append(out0)
         cache_arr.append(cache0)
         for index in np.arange(1,self.num_layers - 1): # self.num_layers = len(hidden_dims) + 1 includes the last affine layer
@@ -301,11 +306,14 @@ class FullyConnectedNet(object):
                 out0,cache0 = affine_bn_relu_forward(out_arr[index-1],self.params['W%d'%(index+1)],self.params['b%d'%(index+1)],self.params['gamma%d'%(index+1)],self.params['beta%d'%(index+1)])
             else:
                 out0,cache0 = affine_relu_forward(out_arr[index-1],self.params['W%d'%(index+1)],self.params['b%d'%(index+1)])
-                
+            if self.use_dropout == True:
+                out0,cache_dropout = dropout_forward(out0,self.dropout_param)
+                cache0 = (cache0, cache_dropout)
             out_arr.append(out0)
             cache_arr.append(cache0)
             
-        index += 1
+        # index += 1
+        index = self.num_layers - 1
         out0,cache0 = affine_forward(out_arr[index-1],self.params['W%d'%(index+1)],self.params['b%d'%(index+1)])
         out_arr.append(out0)
         cache_arr.append(cache0)
@@ -333,7 +341,6 @@ class FullyConnectedNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
-        # no dropout currently
         loss,dsoft = softmax_loss(scores,y)
         L2 = 0
         for index in np.arange(0,self.num_layers):
@@ -345,12 +352,18 @@ class FullyConnectedNet(object):
         grads['W%d'%(self.num_layers)] = dwlast + self.reg * self.params['W%d'%(self.num_layers)]
         grads['b%d'%(self.num_layers)] = dblast
         for index in np.arange(self.num_layers-2,-1,-1): # backward iteration
+            if self.use_dropout == True:
+                cache0, cache_dropout = cache_arr[index]
+                dout = dropout_backward(dout, cache_dropout)
+            else:
+                cache0 = cache_arr[index]
+                
             if self.use_batchnorm == True:
-                dout, dw, db, dgamma, dbeta = affine_bn_relu_backward(dout,cache_arr[index])
+                dout, dw, db, dgamma, dbeta = affine_bn_relu_backward(dout,cache0)
                 grads['gamma%d'%(index+1)] = dgamma
                 grads['beta%d'%(index+1)] = dbeta
             else:
-                dout, dw, db = affine_relu_backward(dout,cache_arr[index])
+                dout, dw, db = affine_relu_backward(dout,cache0)
                 
             grads['W%d'%(index+1)] = dw + self.reg * self.params['W%d'%(index+1)]
             grads['b%d'%(index+1)] = db
