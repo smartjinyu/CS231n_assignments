@@ -433,7 +433,6 @@ def conv_forward_naive(x, w, b, conv_param):
             W_start = j * stride
             result = np.tensordot(x[:,:,H_start:H_start + HH,W_start:W_start + WW],w,axes=([1,2,3],[1,2,3])) + b
             out[:,:,i,j] = result
-    
     pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -459,6 +458,31 @@ def conv_backward_naive(dout, cache):
     ###########################################################################
     # TODO: Implement the convolutional backward pass.                        #
     ###########################################################################
+    x, w, b, conv_param = cache
+    stride = conv_param['stride']
+    pad = conv_param['pad']
+    N = x.shape[0]
+    F = w.shape[0]
+    H = x.shape[2] - 2 * pad
+    W = x.shape[3] - 2 * pad
+    HH = w.shape[2]
+    WW = w.shape[3]
+    H_new = int(1 + (H + 2 * pad - HH) / stride) # H'
+    W_new = int(1 + (W + 2 * pad - WW) / stride) # W'
+    dx = np.zeros(x.shape)
+    dw = np.zeros(w.shape)
+    db = np.zeros(b.shape)
+    for i in range(0,H_new):
+        for j in range(0,W_new):
+            H_start = i * stride
+            W_start = j * stride
+            result = dout[:,:,i,j] # N*F
+            db += np.sum(result,0)
+            dx[:,:,H_start:H_start + HH,W_start:W_start + WW] += np.tensordot(result,w,axes=([1],[0]))
+            dw += np.tensordot(result,x[:,:,H_start:H_start + HH,W_start:W_start + WW],axes=([0],[0]))
+            
+            #result = np.tensordot(x[:,:,H_start:H_start + HH,W_start:W_start + WW],w,axes=([1,2,3],[1,2,3])) + b
+    dx = dx[:,:,pad:H + pad,pad:W + pad]
     pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
