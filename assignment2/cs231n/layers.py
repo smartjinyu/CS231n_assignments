@@ -606,6 +606,39 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
     # version of batch normalization defined above. Your implementation should#
     # be very short; ours is less than five lines.                            #
     ###########################################################################
+    mode = bn_param['mode']
+    eps = bn_param.get('eps', 1e-5)
+    momentum = bn_param.get('momentum', 0.9)
+
+    N, C, H, W = x.shape
+    running_mean = bn_param.get('running_mean', np.zeros((N,H,W), dtype=x.dtype))
+    running_var = bn_param.get('running_var', np.zeros((N,H,W), dtype=x.dtype))
+    if mode == 'train':
+        mini_mean = np.mean(x,axis=1,dtype=x.dtype)
+        mini_var =np.var(x,axis=1,dtype=x.dtype)
+        x = np.swapaxes(x,0,1)
+        numerator = x - mini_mean
+        denominator = (np.sqrt(mini_var + eps))
+        x_temp = numerator / denominator
+        out =  (x_temp.transpose() * gamma + beta).transpose()
+        out = np.swapaxes(out,0,1)
+        running_mean = momentum * running_mean + (1 - momentum) * mini_mean
+        running_var = momentum * running_var + (1 - momentum) * mini_var
+        bn_param['running_mean'] = running_mean
+        bn_param['running_var'] = running_var
+        # running_mean and running_var are used at test time, not at training time
+        cache = (x_temp, numerator, denominator, gamma)
+        
+    elif mode == 'test':
+        x = np.swapaxes(x,0,1)
+        numerator = (x - running_mean)
+        denominator = (np.sqrt(running_var + eps))
+        x_temp = numerator / denominator 
+        out =  (x_temp.transpose() * gamma  + beta).transpose()
+        out = np.swapaxes(out,0,1)
+        cache = (x_temp, numerator, denominator, gamma)
+    else:  
+        raise ValueError('Invalid forward batchnorm mode "%s"' % mode)
     pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
