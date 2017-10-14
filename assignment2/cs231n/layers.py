@@ -668,7 +668,26 @@ def spatial_batchnorm_backward(dout, cache):
     # HINT: You can implement spatial batch normalization using the vanilla   #
     # version of batch normalization defined above. Your implementation should#
     # be very short; ours is less than five lines.                            #
-    ###########################################################################
+    ##########################################################################
+    x_temp, numerator, denominator, gamma = cache
+    dout = np.swapaxes(dout,0,1)
+    N, C, H, W = dout.shape
+    # numerator = x - x_mean, denominator = np.sqrt(x_var + eps), x_temp = numerator / denominator
+    dbeta = np.sum(dout,axis=(1,2,3))
+    dgamma = np.sum(x_temp*dout,axis=(1,2,3))
+    # caution that x_mean x_var are functions of x, we need to take derivatives of them
+    dx_temp = (dout.transpose() * gamma).transpose()
+    # take derivatives at x - x_mean on the standard nomralization step
+    # i.e. (x - x_mean) / np.sqrt(x_var + eps)
+    # or you may just simplify the expression above, eliminate intermediate variables
+    # This should be the compiler's work if in C++/Java
+    dxmu = dx_temp /  denominator - np.sum(dx_temp*numerator,0) * numerator / (N * denominator ** 3)
+    dmu = -np.sum(dxmu,0)/N
+    dx = dxmu + dmu
+    dx = np.swapaxes(dx,0,1)
+    print(dx.shape)
+    print(dgamma.shape)
+    print(dbeta.shape)
     pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
