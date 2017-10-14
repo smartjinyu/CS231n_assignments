@@ -509,6 +509,19 @@ def max_pool_forward_naive(x, pool_param):
     ###########################################################################
     # TODO: Implement the max pooling forward pass                            #
     ###########################################################################
+    pool_width = pool_param['pool_width']
+    pool_height = pool_param['pool_height']
+    stride = pool_param['stride']
+    H = x.shape[2]
+    W = x.shape[3]
+    H_new = int(1 + (H - pool_height) / stride)
+    W_new = int(1 + (W - pool_width) / stride)
+    out = np.zeros((x.shape[0],x.shape[1],H_new,W_new))
+    for i in range(0,H_new):
+        for j in range(0,W_new):
+            H_start = i * stride
+            W_start = j * stride
+            out[:,:,i,j] = np.amax(x[:,:,H_start:H_start + pool_height,W_start:W_start + pool_width],axis=(2,3))
     pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -532,6 +545,29 @@ def max_pool_backward_naive(dout, cache):
     ###########################################################################
     # TODO: Implement the max pooling backward pass                           #
     ###########################################################################
+    x, pool_param = cache
+    pool_width = pool_param['pool_width']
+    pool_height = pool_param['pool_height']
+    stride = pool_param['stride']
+    N = x.shape[0]
+    C = x.shape[1]
+    H = x.shape[2]
+    W = x.shape[3]
+    H_new = int(1 + (H - pool_height) / stride)
+    W_new = int(1 + (W - pool_width) / stride)
+    dx = np.zeros(x.shape)
+    for i in range(0,H_new):
+        for j in range(0,W_new):
+            for n in range(0,N): # for that np.argmax axis cannot be tuple, we have to iterate N
+                for c in range(0,C):
+                    H_start = i * stride
+                    W_start = j * stride
+                    result = dout[n,c,i,j]
+                    xpart = x[n,c,H_start:H_start + pool_height,W_start:W_start + pool_width]
+                    index = np.argmax(xpart) #np.asarray(np.unravel_index(np.argmax(xpart),(pool_height,pool_width)))
+                    mask = np.zeros(pool_height * pool_width)
+                    mask[index] = 1
+                    dx[n,c,H_start:H_start + pool_height,W_start:W_start + pool_width] = mask.reshape((pool_height,pool_width)) * result
     pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
