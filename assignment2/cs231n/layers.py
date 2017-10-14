@@ -685,9 +685,6 @@ def spatial_batchnorm_backward(dout, cache):
     dmu = -np.sum(dxmu,0)/N
     dx = dxmu + dmu
     dx = np.swapaxes(dx,0,1)
-    print(dx.shape)
-    print(dgamma.shape)
-    print(dbeta.shape)
     pass
     ###########################################################################
     #                             END OF YOUR CODE                            #
