@@ -183,7 +183,7 @@ def word_embedding_forward(x, W):
     # HINT: This can be done in one line using NumPy's array indexing.           #
     ##############################################################################
     out = W[x]
-    # return N*T in W first dimension,i.e. N*T*D W[1] returns the first column of W, whose shape is 1*D
+    # return N*T in W first dimension,i.e. N*T*D. W[1] returns the first column of W, whose shape is 1*D
     # W[[1,2]] returns the first and second columns of W, whose shape is 2*D
     cache = (x,W.shape)
     pass

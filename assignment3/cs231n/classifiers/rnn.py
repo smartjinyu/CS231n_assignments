@@ -49,26 +49,26 @@ class CaptioningRNN(object):
         self._end = word_to_idx.get('<END>', None)
 
         # Initialize word vectors
-        self.params['W_embed'] = np.random.randn(vocab_size, wordvec_dim)
+        self.params['W_embed'] = np.random.randn(vocab_size, wordvec_dim) # V*W
         self.params['W_embed'] /= 100
 
         # Initialize CNN -> hidden state projection parameters
-        self.params['W_proj'] = np.random.randn(input_dim, hidden_dim)
+        self.params['W_proj'] = np.random.randn(input_dim, hidden_dim) # W*H
         self.params['W_proj'] /= np.sqrt(input_dim)
-        self.params['b_proj'] = np.zeros(hidden_dim)
+        self.params['b_proj'] = np.zeros(hidden_dim) # H*
 
         # Initialize parameters for the RNN
         dim_mul = {'lstm': 4, 'rnn': 1}[cell_type]
-        self.params['Wx'] = np.random.randn(wordvec_dim, dim_mul * hidden_dim)
+        self.params['Wx'] = np.random.randn(wordvec_dim, dim_mul * hidden_dim) # W*(1 or 4)H
         self.params['Wx'] /= np.sqrt(wordvec_dim)
-        self.params['Wh'] = np.random.randn(hidden_dim, dim_mul * hidden_dim)
+        self.params['Wh'] = np.random.randn(hidden_dim, dim_mul * hidden_dim) # H*(1 or 4)H
         self.params['Wh'] /= np.sqrt(hidden_dim)
-        self.params['b'] = np.zeros(dim_mul * hidden_dim)
+        self.params['b'] = np.zeros(dim_mul * hidden_dim) # (1 or 4)H
 
         # Initialize output to vocab weights
-        self.params['W_vocab'] = np.random.randn(hidden_dim, vocab_size)
+        self.params['W_vocab'] = np.random.randn(hidden_dim, vocab_size) # H*V
         self.params['W_vocab'] /= np.sqrt(hidden_dim)
-        self.params['b_vocab'] = np.zeros(vocab_size)
+        self.params['b_vocab'] = np.zeros(vocab_size) # V*
 
         # Cast parameters to correct dtype
         for k, v in self.params.items():
@@ -137,6 +137,21 @@ class CaptioningRNN(object):
         # defined above to store loss and gradients; grads[k] should give the      #
         # gradients for self.params[k].                                            #
         ############################################################################
+        # forward
+        h0 = features.dot(W_proj) + b_proj # initial hidden state N*H
+        [word_embedding,cache_we] = word_embedding_forward(captions_in,W_embed) # N*T*W
+        if self.cell_type == 'rnn':
+            [h_cell,cache_cell] = rnn_forward(word_embedding,h0,Wx,Wh,b) # N*T*H
+        [score_ta,cache_ta] = temporal_affine_forward(h_cell,W_vocab,b_vocab)
+        [loss,dx_ts] = temporal_softmax_loss(score_ta,captions_out,mask)
+        
+        # backward
+        [dx_ta,grads['W_vocab'],grads['b_vocab']] = temporal_affine_backward(dx_ts,cache_ta)
+        if self.cell_type == 'rnn':
+            [dx_cell,dh0,grads['Wx'],grads['Wh'],grads['b']] = rnn_backward(dx_ta,cache_cell)
+        grads['W_embed'] = word_embedding_backward(dx_cell,cache_we)
+        grads['W_proj'] = features.transpose().dot(dh0)
+        grads['b_proj'] = np.sum(dh0,axis=0)
         pass
         ############################################################################
         #                             END OF YOUR CODE                             #
