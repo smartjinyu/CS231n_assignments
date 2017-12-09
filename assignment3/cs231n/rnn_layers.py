@@ -265,6 +265,20 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
     # TODO: Implement the forward pass for a single timestep of an LSTM.        #
     # You may want to use the numerically stable sigmoid implementation above.  #
     #############################################################################
+    a = x.dot(Wx) + prev_h.dot(Wh) + b # N*4H
+    H = prev_h.shape[1]
+    ai = a[:,0:H]
+    af = a[:,H:2*H]
+    ao = a[:,2*H:3*H]
+    ag = a[:,3*H:4*H]
+    i = sigmoid(ai)
+    f = sigmoid(af)
+    o = sigmoid(ao)
+    g = np.tanh(ag) # all N*H
+    next_c = f * prev_c + i * g # N*H
+    next_c_tanh = np.tanh(next_c)
+    next_h = o * next_c_tanh
+    cache = (x,i,f,o,g,ai,af,ao,ag,Wx,Wh,b,prev_c,prev_h,next_c_tanh)
     pass
     ##############################################################################
     #                               END OF YOUR CODE                             #
@@ -297,6 +311,24 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
     # HINT: For sigmoid and tanh you can compute local derivatives in terms of  #
     # the output value from the nonlinearity.                                   #
     #############################################################################
+    x,i,f,o,g,ai,af,ao,ag,Wx,Wh,b,prev_c,prev_h,next_c_tanh = cache
+    dnext_c_tanh = dnext_h * o
+    do = dnext_h * next_c_tanh
+    dnext_c += (1 - np.power(next_c_tanh,2)) * dnext_c_tanh # derivatives of next_c from next_h
+    dprev_c = f * dnext_c
+    df = prev_c * dnext_c
+    di = g * dnext_c
+    dg = i * dnext_c
+    dag = dg * (1-np.power(g,2))
+    dao = do * (o * (1-o))
+    daf = df * (f * (1-f))
+    dai = di * (i * (1-i))
+    da = np.concatenate([dai,daf,dao,dag],axis=1) # N*4H
+    dx = da.dot(Wx.transpose())
+    dWx = x.transpose().dot(da)
+    dprev_h = da.dot(Wh.transpose())
+    dWh = prev_h.transpose().dot(da)
+    db = np.sum(da,axis=0)
     pass
     ##############################################################################
     #                               END OF YOUR CODE                             #
