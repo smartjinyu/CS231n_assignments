@@ -142,7 +142,7 @@ class CaptioningRNN(object):
         [word_embedding,cache_we] = word_embedding_forward(captions_in,W_embed) # N*T*W
         if self.cell_type == 'rnn':
             [h_cell,cache_cell] = rnn_forward(word_embedding,h0,Wx,Wh,b) # N*T*H
-        [score_ta,cache_ta] = temporal_affine_forward(h_cell,W_vocab,b_vocab)
+        [score_ta,cache_ta] = temporal_affine_forward(h_cell,W_vocab,b_vocab) # N*T*V
         [loss,dx_ts] = temporal_softmax_loss(score_ta,captions_out,mask)
         
         # backward
@@ -214,6 +214,15 @@ class CaptioningRNN(object):
         # functions; you'll need to call rnn_step_forward or lstm_step_forward in #
         # a loop.                                                                 #
         ###########################################################################
+        h0 = features.dot(W_proj) + b_proj
+        # reference https://zhuanlan.zhihu.com/p/31394719
+        captions[:,0] = self._start
+        for t in range(0,max_length-1):
+            [word,_] = word_embedding_forward(captions[:,t],W_embed) # onehot embedding
+            [next_h,_] = rnn_step_forward(word,h0,Wx,Wh,b)
+            h0 = next_h
+            [scores,_] = affine_forward(next_h,W_vocab,b_vocab)
+            captions[:,t+1] = np.argmax(scores,axis=1)
         pass
         ############################################################################
         #                             END OF YOUR CODE                             #

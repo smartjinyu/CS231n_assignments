@@ -185,6 +185,7 @@ def word_embedding_forward(x, W):
     out = W[x]
     # return N*T in W first dimension,i.e. N*T*D. W[1] returns the first column of W, whose shape is 1*D
     # W[[1,2]] returns the first and second columns of W, whose shape is 2*D
+    # onehot embedding here
     cache = (x,W.shape)
     pass
     ##############################################################################
