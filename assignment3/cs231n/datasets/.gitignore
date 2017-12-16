@@ -1,5 +1,6 @@
 coco_captioning/*
 squeezenet_tf/*
+MNIST_data/*
 *.npz
 squeezenet.ckpt.data-00000-of-00001
 squeezenet.ckpt.index
