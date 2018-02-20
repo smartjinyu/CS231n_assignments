@@ -1,5 +1,9 @@
 # Assignments of CS231n Stanford University
 
+My summary of experience of learning CS231n is [here](in Chinese).
+
+[here]:https://smartjinyu.com/machine/learning/2017/12/23/my_cs231n_experience.html
+
 This repository is my homework of Convolutional Neural Networks for Visual Recognition, CS231n in Stanford University.
 
 You can visit [the course page] for more details about this course and assignments.
